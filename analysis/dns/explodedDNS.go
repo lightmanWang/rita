@@ -27,10 +27,10 @@ func buildExplodedDNSVistedCounts(res *resources.Resources) {
 	res.DB.MapReduceCollection(
 		res.Config.T.Structure.DNSTable,
 		mgo.MapReduce{
-			Map:      getExplodedDNSMapper("query"),
-			Reduce:   getExplodedDNSReducer(),
-			Finalize: getExplodedDNSFinalizer(),
-			Out:      bson.M{"replace": tempVistedCountCollName},
+			Map:       getExplodedDNSMapper("query"),
+			Reduce:    getExplodedDNSReducer(),
+			Finalize:  getExplodedDNSFinalizer(),
+			Out:       bson.M{"replace": tempVistedCountCollName, "nonAtomic": true},
 		},
 	)
 }
@@ -41,10 +41,10 @@ func buildExplodedDNSUniqSubdomains(res *resources.Resources) {
 	res.DB.MapReduceCollection(
 		tempVistedCountCollName,
 		mgo.MapReduce{
-			Map:      getExplodedDNSMapper("_id"),
-			Reduce:   getExplodedDNSReducer(),
-			Finalize: getExplodedDNSFinalizer(),
-			Out:      bson.M{"replace": tempUniqSubdomainCollName},
+			Map:       getExplodedDNSMapper("_id"),
+			Reduce:    getExplodedDNSReducer(),
+			Finalize:  getExplodedDNSFinalizer(),
+			Out:       bson.M{"replace": tempUniqSubdomainCollName, "nonAtomic": true},
 		},
 	)
 }
