@@ -74,11 +74,9 @@ func (fs *FSImporter) Run(datastore Datastore) {
 
 	filterHugeUconnsMap, connMap := fs.parseFiles(indexedFiles, fs.parseThreads, datastore, fs.res.Log)
 
-	// Must wait for all inserts to finish before attempting to delete
-	datastore.Flush()
-	fs.bulkRemoveHugeUconns(indexedFiles[0].TargetDatabase, filterHugeUconnsMap, connMap)
-
 	updateFilesIndex(indexedFiles, fs.res.MetaDB, fs.res.Log)
+
+	datastore.Flush()
 
 	progTime = time.Now()
 	fs.res.Log.WithFields(
@@ -89,6 +87,17 @@ func (fs *FSImporter) Run(datastore Datastore) {
 	).Info("Finished upload. Starting indexing")
 	fmt.Println("\t[-] Indexing log entries. This may take a while.")
 	datastore.Index()
+
+	progTime = time.Now()
+	fs.res.Log.WithFields(
+		log.Fields{
+			"current_time": progTime.Format(util.TimeFormat),
+			"total_time":   progTime.Sub(start).String(),
+		},
+	).Info("Finished indexing. Removing unused conn entries")
+	fmt.Println("\t[-] Removing unused conn entries. This may take a while.")
+	// Must wait for all inserts to finish before attempting to delete
+	fs.bulkRemoveHugeUconns(indexedFiles[0].TargetDatabase, filterHugeUconnsMap, connMap)
 
 	progTime = time.Now()
 	fs.res.Log.WithFields(
@@ -373,7 +382,7 @@ func (fs *FSImporter) bulkRemoveHugeUconns(targetDB string, filterHugeUconnsMap 
 	resDB := fs.res.DB
 	resConf := fs.res.Config
 	logger := fs.res.Log
-	var deleteQuery bson.M
+	var deleteQuery []bson.M
 
 	// create a new datastore just for frequent connections since the old datastore
 	// will be Flushed by now and closed for writing
@@ -387,7 +396,7 @@ func (fs *FSImporter) bulkRemoveHugeUconns(targetDB string, filterHugeUconnsMap 
 	bulk := ssn.DB(targetDB).C(resConf.T.Structure.ConnTable).Bulk()
 	bulk.Unordered()
 
-	fmt.Println("\t[-] Removing unused connection info. This may take a while.")
+	// fmt.Println("\t[-] Removing unused connection info. This may take a while.")
 	for _, uconn := range filterHugeUconnsMap {
 		datastore.Store(&ImportedData{
 			BroData: &parsetypes.Freq{
@@ -399,12 +408,12 @@ func (fs *FSImporter) bulkRemoveHugeUconns(targetDB string, filterHugeUconnsMap 
 			TargetCollection: resConf.T.Structure.FrequentConnTable,
 		})
 
-		deleteQuery = bson.M{
+		deleteQuery = append(deleteQuery, bson.M{
 			"$and": []bson.M{
 				bson.M{"id_orig_h": uconn.src},
 				bson.M{"id_resp_h": uconn.dst},
-			}}
-		bulk.RemoveAll(deleteQuery)
+			}})
+		// bulk.RemoveAll(deleteQuery)
 	}
 
 	// Flush the datastore to ensure that it finishes all of its writes
@@ -412,6 +421,7 @@ func (fs *FSImporter) bulkRemoveHugeUconns(targetDB string, filterHugeUconnsMap 
 	datastore.Index()
 
 	// Execute the bulk deletion
+	bulk.RemoveAll(bson.M{"$or": deleteQuery})
 	bulkResult, err := bulk.Run()
 	if err != nil {
 		logger.WithFields(log.Fields{
