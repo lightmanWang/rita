@@ -38,6 +38,12 @@ var (
 		Usage: "Reset database analysis",
 	}
 
+	//allFlag allows parent command to be implemented on all databases
+	allFlag = cli.BoolFlag{
+		Name:  "all, a",
+		Usage: "Perform on all databases",
+	}
+
 	// for output we often want a human readable option which produces a nice
 	// report instead of the simple csv style output
 	humanFlag = cli.BoolFlag{
