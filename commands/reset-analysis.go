@@ -18,13 +18,14 @@ func init() {
 		ArgsUsage: "<database>",
 		Flags: []cli.Flag{
 			forceFlag,
+			allFlag,
 			configFlag,
 		},
 		Action: func(c *cli.Context) error {
 			res := resources.InitResources(c.String("config"))
 			db := c.Args().Get(0)
 			if db == "" {
-				return cli.NewExitError("Specify a database", -1)
+				return cli.NewExitError("Specify a database or use -a flag for all databases", -1)
 			}
 
 			return resetAnalysis(db, res, c.Bool("force"))
@@ -33,6 +34,22 @@ func init() {
 
 	bootstrapCommands(reset)
 }
+
+// // resetAnalysis cleans out all of the analysis data, leaving behind only the
+// // raw data from parsing the logs
+// func resetAnalysisAll(database string, res *resources.Resources, forceFlag bool) error {
+// 	//clean database
+//
+// 	conn := res.Config.T.Structure.ConnTable
+// 	http := res.Config.T.Structure.HTTPTable
+// 	dns := res.Config.T.Structure.DNSTable
+//
+// 	names, err := res.DB.Session.DB(database).CollectionNames()
+// 	if err != nil || len(names) == 0 {
+// 		return cli.NewExitError("Failed to find analysis results", -1)
+// 	}
+//
+// }
 
 // resetAnalysis cleans out all of the analysis data, leaving behind only the
 // raw data from parsing the logs

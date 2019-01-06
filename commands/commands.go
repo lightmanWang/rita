@@ -26,7 +26,7 @@ var (
 		Value: "",
 	}
 
-	// configFlag allows users to specify an alternate config file to use
+	//forceFlag allows users to specify an alternate config file to use
 	forceFlag = cli.BoolFlag{
 		Name:  "force, f",
 		Usage: "Bypass verification prompt",
@@ -36,6 +36,12 @@ var (
 	resetFlag = cli.BoolFlag{
 		Name:  "reset, r",
 		Usage: "Reset database analysis",
+	}
+
+	//allFlag allows parent command to be implemented on all databases
+	allFlag = cli.BoolFlag{
+		Name:  "all, a",
+		Usage: "Perform on all databases",
 	}
 
 	// for output we often want a human readable option which produces a nice
