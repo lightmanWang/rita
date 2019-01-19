@@ -15,12 +15,12 @@ import (
 	"github.com/activecm/rita/config"
 	"github.com/activecm/rita/database"
 	"github.com/activecm/rita/parser/conn"
+	"github.com/activecm/rita/parser/explodedDNS"
 	fpt "github.com/activecm/rita/parser/fileparsetypes"
 	"github.com/activecm/rita/parser/freq"
 	"github.com/activecm/rita/parser/host"
 	"github.com/activecm/rita/parser/parsetypes"
 	"github.com/activecm/rita/parser/uconn"
-	"github.com/activecm/rita/parser/explodedDNS"
 	"github.com/activecm/rita/resources"
 	"github.com/activecm/rita/util"
 	log "github.com/sirupsen/logrus"
@@ -358,8 +358,10 @@ func (fs *FSImporter) parseFiles(indexedFiles []*fpt.IndexedFile, parsingThreads
 							parseDNS := reflect.ValueOf(data).Elem()
 
 							domain := parseDNS.FieldByName("Query").Interface().(string)
-							
-							explodedDNSRepo.Upsert(&parsetypes.ExplodedDNS{Domain: domain}, "dnscat")
+
+							getParsedURL(domain)
+
+							// explodedDNSRepo.Upsert(&parsetypes.ExplodedDNS{Domain: domain}, targetDB)
 
 							//fmt.Println(query)
 						} else {
@@ -481,7 +483,8 @@ func (fs *FSImporter) bulkRemoveHugeUconns(targetDB string, filterHugeUconnsMap 
 		}
 	}
 	// Execute the bulk deletion
-	connRepo.BulkDelete(freqConns, targetDB)
+	// connRepo.BulkDelete(freqConns, targetDB)
+	_ = connRepo
 }
 
 //removeOldFilesFromIndex checks all indexedFiles passed in to ensure

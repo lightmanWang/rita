@@ -3,7 +3,10 @@ package parser
 import (
 	"fmt"
 	"net"
+	// "net/url"
 	"os"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 func (fs *FSImporter) filterConnPair(src string, dst string) (ignore bool) {
@@ -53,7 +56,7 @@ func (fs *FSImporter) filterConnPair(src string, dst string) (ignore bool) {
 	return
 }
 
-//parseSubnets parses the provided subnets into net.ipnet format
+//getParsedSubnets parses the provided subnets into net.ipnet format
 func getParsedSubnets(subnets []string) (parsedSubnets []*net.IPNet) {
 
 	for _, entry := range subnets {
@@ -87,4 +90,56 @@ func containsIP(subnets []*net.IPNet, ip net.IP) bool {
 		}
 	}
 	return false
+}
+
+//getParsedURL parses the url
+func getParsedURL(rawURL string) {
+
+	//try to parse out cidr range
+	parsedURL, state := publicsuffix.PublicSuffix(rawURL)
+
+	//if there was an error, check if entry was an IP not a range
+	if state == true {
+
+		fmt.Println(rawURL, "  ", parsedURL)
+
+	} else {
+		fmt.Println("***** FALSE ***** ", rawURL, "  ", parsedURL)
+	}
+
+}
+
+//getParsedURL2 parses the url
+func getParsedURL2(rawURL string) {
+
+	//try to parse out cidr range
+	// if strings.Contains(rawURL, "s3.amazonaws.com") {
+	// 	parsedURL2, err := publicsuffix.EffectiveTLDPlusOne(rawURL)
+	//
+	// 	//if there was an error, check if entry was an IP not a range
+	// 	if err == nil {
+	//
+	// 		fmt.Println("parsed correctly: ", rawURL, parsedURL2)
+	//
+	// 	} else {
+	// 		parsedURL1, err := publicsuffix.EffectiveTLDPlusOne(rawURL)
+	// 		fmt.Println("*** not parsed: ", rawURL)
+	// 		fmt.Println("*** cause: ", err.Error())
+	// 	}
+	//
+	// }
+
+	parsedURL2, err := publicsuffix.EffectiveTLDPlusOne(rawURL)
+
+	if err == nil {
+
+		fmt.Println(rawURL, parsedURL2)
+
+	}
+
+	if err != nil {
+		fmt.Fprintf(os.Stdout, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Error parsing url entry: %s\n", err.Error())
+		// os.Exit(-1)
+		// return
+	}
 }
