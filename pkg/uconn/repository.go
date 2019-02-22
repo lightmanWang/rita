@@ -26,6 +26,7 @@ type Pair struct {
 	OrigBytesList         []int64
 	TXTQueryCount         int64
 	UntrustedAppConnCount int64
+	InvalidCert           bool
 }
 
 //AnalysisView (for reporting)

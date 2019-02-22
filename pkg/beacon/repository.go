@@ -33,6 +33,7 @@ type uconnRes struct {
 	Dat             []uconnDat `bson:"dat"`
 	ConnectionCount int64      `bson:"connection_count"`
 	TotalBytes      int64      `bson:"total_bytes"`
+	InvalidCert     bool       `bson:"invalid_cert"`
 }
 
 //TSData ...

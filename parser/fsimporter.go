@@ -456,7 +456,32 @@ func (fs *FSImporter) parseFiles(indexedFiles []*fpt.IndexedFile, parsingThreads
 						} else if targetCollection == fs.res.Config.T.Structure.SSLTable {
 
 							// parseSSL := reflect.ValueOf(data).Elem()
+							parseSSL := reflect.ValueOf(data).Elem()
+							certStatus := parseSSL.FieldByName("ValidationStatus").Interface().(string)
 
+							mutex.Lock()
+							//if there's any problem in the certificate, mark it invalid
+							if certStatus != "ok" && certStatus != "-" {
+								src := parseSSL.FieldByName("Source").Interface().(string)
+								dst := parseSSL.FieldByName("Destination").Interface().(string)
+
+								// Check if uconn map value is set, because this record could
+								// come before a relevant conns record
+								if _, ok := uconnMap[src+dst]; !ok {
+									// create new uconn record with src and dst
+									// Set IsLocalSrc and IsLocalDst fields based on InternalSubnets setting
+									// we only need to do this once if the uconn record does not exist
+									fmt.Println("Invalid cert")
+									uconnMap[src+dst] = &uconn.Pair{
+										Src:         src,
+										Dst:         dst,
+										IsLocalSrc:  containsIP(fs.GetInternalSubnets(), net.ParseIP(src)),
+										IsLocalDst:  containsIP(fs.GetInternalSubnets(), net.ParseIP(dst)),
+										InvalidCert: true,
+									}
+								}
+							}
+							mutex.Unlock()
 							// stores the ssl record in the ssl collection
 							// datastore.Store(&ImportedData{
 							// 	BroData:          data,
